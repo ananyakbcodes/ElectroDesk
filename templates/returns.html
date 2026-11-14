@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Product Returns{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Sales Returns &amp; Adjustments</h1>
+</div>
+
+<div class="card">
+  <h3>Step 1: Select Original Bill</h3>
+  <form method="GET" action="{{ url_for('ops.returns') }}" class="form-row">
+    <div class="form-group" style="flex: 2;">
+      <label>Completed Invoice *</label>
+      <select name="sale_id" required>
+        <option value="">-- Choose Bill --</option>
+        {% for s in completed_sales %}
+        <option value="{{ s.id }}" {% if selected_sale and selected_sale.sale.id == s.id %}selected{% endif %}>
+          {{ s.invoice_no }} — {{ s.sale_date }} — {{ s.customer_name or s.walkin_name or 'Walk-in' }} (Net: ₹{{ s.net_amount }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn">Load Bill Items</button>
+  </form>
+</div>
+
+{% if selected_sale %}
+<div class="card">
+  <h3>Step 2: Process Return on {{ selected_sale.sale.invoice_no }}</h3>
+  <form method="POST" action="{{ url_for('ops.returns') }}">
+    <input type="hidden" name="sale_id" value="{{ selected_sale.sale.id }}">
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>Select Purchased Line Item *</label>
+        <select name="sale_item_id" required>
+          {% for item in selected_sale['items'] %}
+            {% set rem = (item.quantity|float - item.returned_qty|float) %}
+            {% if rem > 0 %}
+            <option value="{{ item.id }}">
+              {{ item.product_name_snapshot }} — Sold: {{ item.quantity }} {{ item.unit_snapshot }}, Already Returned: {{ item.returned_qty }} (Max Returnable: {{ "%.2f"|format(rem) }})
+            </option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Return Quantity *</label>
+        <input type="number" step="0.01" min="0.01" name="quantity" required>
+      </div>
+      <div class="form-group">
+        <label>Return Date *</label>
+        <input type="date" name="return_date" value="{{ today }}" required>
+      </div>
+    </div>
+    <div style="margin-bottom: 12px;">
+      <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" name="is_resalable" value="1" checked>
+        Item is in good resalable condition (restore quantity back into shelf stock)
+      </label>
+    </div>
+    <button type="submit" class="btn btn-success">Confirm Return &amp; Adjust Balance</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Return History</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Return #</th>
+          <th>Date</th>
+          <th>Original Bill</th>
+          <th>Product</th>
+          <th class="num">Qty Returned</th>
+          <th class="num">Value Adjusted</th>
+          <th>Resalable</th>
+          <th>Settlement</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in returns %}
+        <tr>
+          <td><strong>{{ r.return_no }}</strong></td>
+          <td>{{ r.return_date }}</td>
+          <td>{{ r.invoice_no }}</td>
+          <td>{{ r.product_name }}</td>
+          <td class="num">{{ r.quantity }} {{ r.unit }}</td>
+          <td class="num">₹{{ r.refund_amount }}</td>
+          <td>{% if r.is_resalable %}<span class="badge badge-success">Yes (Stock Restored)</span>{% else %}<span class="badge badge-danger">No (Damaged)</span>{% endif %}</td>
+          <td><span class="badge badge-info">{{ r.settlement_type }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">No product returns recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

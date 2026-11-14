@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Quotation {{ detail.quotation.quote_no }}{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <h1>Quotation {{ detail.quotation.quote_no }}</h1>
+  <div style="display: flex; gap: 8px;">
+    <button type="button" class="btn" onclick="window.print()">Print Quotation</button>
+    <a href="{{ url_for('ops.quotations') }}" class="btn btn-secondary">All Quotations</a>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; border-bottom: 2px solid var(--border); padding-bottom: 12px; margin-bottom: 14px;">
+    <div>
+      <h2 style="margin-bottom: 4px;">{{ store.store_name }} — QUOTATION</h2>
+      <div>{{ store.store_address }}</div>
+      {% if store.store_phone %}<div>Phone: {{ store.store_phone }}</div>{% endif %}
+    </div>
+    <div style="text-align: right;">
+      <div><strong>Quote #:</strong> {{ detail.quotation.quote_no }}</div>
+      <div><strong>Date:</strong> {{ detail.quotation.quote_date }}</div>
+      <div><strong>Status:</strong> {{ detail.quotation.status }}</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 14px;">
+    <strong>Prepared For:</strong> {{ detail.quotation.customer_name }}
+    {% if detail.quotation.customer_phone %} ({{ detail.quotation.customer_phone }}){% endif %}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Code</th>
+        <th>Item</th>
+        <th class="num">Qty</th>
+        <th class="num">Unit Price</th>
+        <th class="num">Line Total (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in detail['items'] %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ item.product_code }}</td>
+        <td>{{ item.product_name }}</td>
+        <td class="num">{{ item.quantity }} {{ item.unit }}</td>
+        <td class="num">₹{{ item.unit_price }}</td>
+        <td class="num">₹{{ item.line_total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="max-width: 300px; margin-left: auto; margin-top: 14px;">
+    <table>
+      <tr><td>Subtotal</td><td class="num">₹{{ detail.quotation.subtotal }}</td></tr>
+      <tr><td>Discount</td><td class="num">- ₹{{ detail.quotation.discount }}</td></tr>
+      {% if detail.quotation.tax_rate|float > 0 %}
+      <tr><td>Tax ({{ detail.quotation.tax_rate }}%)</td><td class="num">₹{{ detail.quotation.tax_amount }}</td></tr>
+      {% endif %}
+      <tr><td><strong>Estimated Total</strong></td><td class="num"><strong>₹{{ detail.quotation.total_amount }}</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+{% if detail.quotation.status == 'Converted' and detail.quotation.converted_sale_id %}
+<div class="alert alert-success no-print">
+  This quotation has been converted into an invoice.
+  <a href="{{ url_for('sales.bill_detail', sale_id=detail.quotation.converted_sale_id) }}" class="btn btn-sm" style="margin-left: 10px;">Open Generated Bill</a>
+</div>
+{% elif detail.quotation.status != 'Converted' %}
+<div class="grid-2 no-print">
+  <div class="card">
+    <h3>Update Quotation Status</h3>
+    <form method="POST" action="{{ url_for('ops.quotation_status', quote_id=detail.quotation.id) }}" class="form-row">
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="Pending" {% if detail.quotation.status == 'Pending' %}selected{% endif %}>Pending</option>
+          <option value="Accepted" {% if detail.quotation.status == 'Accepted' %}selected{% endif %}>Accepted</option>
+          <option value="Rejected" {% if detail.quotation.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-secondary">Update Status</button>
+    </form>
+  </div>
+
+  {% if detail.quotation.status != 'Rejected' %}
+  <div class="card">
+    <h3>Convert Quotation to Completed Bill</h3>
+    <form method="POST" action="{{ url_for('ops.quotation_convert', quote_id=detail.quotation.id) }}">
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label>Link Credit Customer (Required if not paying full ₹{{ detail.quotation.total_amount }})</label>
+        <select name="customer_id">
+          <option value="">-- Walk-in Customer --</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount Paid Now (₹)</label>
+          <input type="number" step="0.01" min="0" name="paid_amount" value="{{ detail.quotation.total_amount }}" required>
+        </div>
+        <div class="form-group">
+          <label>Method</label>
+          <select name="payment_method">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Card">Card</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-success">Convert to Bill</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

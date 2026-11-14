@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}India Post PIN API Demo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>India Post PIN Code Lookup (External REST API Demo)</h1>
+</div>
+
+<div class="card" style="max-width: 650px;">
+  <p style="color: var(--muted); margin-top: 0;">
+    Queries <code>https://api.postalpincode.in/pincode/&lt;pincode&gt;</code> to verify customer/supplier delivery locations. Isolated from store financial tables.
+  </p>
+  <form method="POST" action="{{ url_for('main.pin_lookup') }}" class="form-row">
+    <div class="form-group">
+      <label>Enter 6-Digit Indian PIN Code *</label>
+      <input type="text" name="pincode" maxlength="6" value="{{ searched_pin }}" placeholder="e.g. 403001" required>
+    </div>
+    <button type="submit" class="btn">Fetch Location JSON</button>
+  </form>
+
+  {% if result %}
+    {% if result.ok %}
+      <div class="alert alert-success">Found {{ result.offices|length }} Post Office record(s) for PIN {{ result.pincode }}.</div>
+      <table>
+        <thead>
+          <tr><th>Post Office</th><th>Branch Type</th><th>District</th><th>State</th></tr>
+        </thead>
+        <tbody>
+          {% for po in result.offices %}
+          <tr>
+            <td><strong>{{ po.name }}</strong></td>
+            <td>{{ po.branch_type }}</td>
+            <td>{{ po.district }}</td>
+            <td>{{ po.state }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="alert alert-danger">{{ result.error }}</div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

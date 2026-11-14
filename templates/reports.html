@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Business Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Operational Business Reports</h1>
+  <button type="button" class="btn no-print" onclick="window.print()">Print Reports</button>
+</div>
+
+<div class="card no-print">
+  <form method="GET" action="{{ url_for('ops.reports') }}" class="form-row">
+    <div class="form-group">
+      <label>Select Date (Daily Sales)</label>
+      <input type="date" name="date" value="{{ selected_date }}">
+    </div>
+    <div class="form-group">
+      <label>Select Month (Monthly Sales)</label>
+      <input type="month" name="month" value="{{ selected_month }}">
+    </div>
+    <button type="submit" class="btn">Generate Reports</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>1. Daily Sales Report ({{ daily.date }})</h3>
+  <p>
+    <strong>Total Sales:</strong> ₹{{ daily.total_sales }} |
+    <strong>Collected:</strong> ₹{{ daily.total_collected }} |
+    <strong>Credit Issued:</strong> ₹{{ daily.total_credit }}
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Invoice #</th><th>Customer</th><th class="num">Net Bill</th><th class="num">Paid</th><th class="num">Balance</th></tr>
+      </thead>
+      <tbody>
+        {% for b in daily.bills %}
+        <tr>
+          <td>{{ b.invoice_no }}</td>
+          <td>{{ b.customer_name or b.walkin_name or 'Walk-in' }}</td>
+          <td class="num">₹{{ b.net_amount }}</td>
+          <td class="num">₹{{ b.paid_amount }}</td>
+          <td class="num">₹{{ b.balance }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">No completed sales on {{ daily.date }}.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>2. Monthly Sales Summary ({{ monthly.year_month }})</h3>
+  <p>
+    <strong>Monthly Total:</strong> ₹{{ monthly.month_total }} |
+    <strong>Collected:</strong> ₹{{ monthly.month_paid }} |
+    <strong>Credit:</strong> ₹{{ monthly.month_credit }}
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th class="num">Bills Count</th><th class="num">Day Sales</th><th class="num">Day Collected</th></tr>
+      </thead>
+      <tbody>
+        {% for d in monthly.days %}
+        <tr>
+          <td>{{ d.sale_date }}</td>
+          <td class="num">{{ d.bill_count }}</td>
+          <td class="num">₹{{ d.day_total }}</td>
+          <td class="num">₹{{ d.day_paid }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">No sales recorded in {{ monthly.year_month }}.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>3. Inventory Valuation (Total: ₹{{ inv_val.total_valuation }})</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Code</th><th>Product</th><th class="num">Stock</th><th class="num">Stock Value</th></tr>
+        </thead>
+        <tbody>
+          {% for item in inv_val['items'] %}
+          <tr>
+            <td>{{ item.product_code }}</td>
+            <td>{{ item.name }}</td>
+            <td class="num">{{ item.stock_qty }} {{ item.unit }}</td>
+            <td class="num">₹{{ item.stock_value }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No active products.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>4. Low-Stock Report ({{ low_stock|length }} items)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Code</th><th>Product</th><th class="num">In Stock</th><th class="num">Threshold</th></tr>
+        </thead>
+        <tbody>
+          {% for item in low_stock %}
+          <tr>
+            <td>{{ item.product_code }}</td>
+            <td>{{ item.name }}</td>
+            <td class="num"><span class="badge badge-danger">{{ item.stock_qty }} {{ item.unit }}</span></td>
+            <td class="num">{{ item.min_stock_threshold }} {{ item.unit }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No low-stock alerts.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>5. Customer Outstanding Bills</h3>
+    <table>
+      <thead><tr><th>Customer</th><th>Invoice #</th><th class="num">Balance Due</th></tr></thead>
+      <tbody>
+        {% for c in dues.customer_dues %}
+        <tr><td>{{ c.customer_name }}</td><td>{{ c.invoice_no }}</td><td class="num">₹{{ c.balance }}</td></tr>
+        {% else %}
+        <tr><td colspan="3">Zero pending customer dues.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>6. Supplier Outstanding Invoices</h3>
+    <table>
+      <thead><tr><th>Supplier</th><th>Purchase #</th><th class="num">Balance Payable</th></tr></thead>
+      <tbody>
+        {% for s in dues.supplier_dues %}
+        <tr><td>{{ s.supplier_name }}</td><td>{{ s.purchase_no }}</td><td class="num">₹{{ s.balance }}</td></tr>
+        {% else %}
+        <tr><td colspan="3">Zero pending supplier dues.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Sales Bills{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Sales Bills &amp; Invoices</h1>
+  <a href="{{ url_for('sales.new_bill') }}" class="btn btn-success">+ Create New Bill</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th class="num">Net Bill</th>
+          <th class="num">Paid</th>
+          <th class="num">Balance Due</th>
+          <th>Status</th>
+          <th>View</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td><strong>{{ s.invoice_no }}</strong></td>
+          <td>{{ s.sale_date }}</td>
+          <td>{{ s.customer_name or s.walkin_name or 'Walk-in Customer' }}</td>
+          <td class="num">₹{{ s.net_amount }}</td>
+          <td class="num">₹{{ s.paid_amount }}</td>
+          <td class="num">
+            {% if s.balance|float > 0 %}
+              <span class="badge badge-danger">₹{{ s.balance }}</span>
+            {% else %}
+              ₹0.00
+            {% endif %}
+          </td>
+          <td>
+            {% if s.status == 'COMPLETED' %}
+              <span class="badge badge-success">COMPLETED</span>
+            {% else %}
+              <span class="badge badge-warning">VOIDED</span>
+            {% endif %}
+          </td>
+          <td><a href="{{ url_for('sales.bill_detail', sale_id=s.id) }}" class="btn btn-sm">Open / Print</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">No bills created yet. Click "+ Create New Bill" to start.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Credit Customers{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Credit Customers &amp; Contractors</h1>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Add Credit Customer</h3>
+    <form method="POST" action="{{ url_for('sales.customers') }}">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer / Contractor Name *</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" name="phone">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+          <label>Address / Site</label>
+          <input type="text" name="address">
+        </div>
+        <div class="form-group">
+          <label>PIN Code</label>
+          <input type="text" name="pincode" maxlength="6">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="e.g. Regular electrician">
+      </div>
+      <button type="submit" class="btn btn-success">Save Customer</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Record Lump-Sum Credit Payment</h3>
+    <p style="font-size: 13px; color: var(--muted);">Automatically settles the customer's oldest unpaid bills first.</p>
+    <form method="POST" action="{{ url_for('sales.record_payment') }}">
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label>Select Customer *</label>
+        <select name="customer_id" required>
+          <option value="">-- Choose Customer --</option>
+          {% for c in customers %}
+            {% if c.outstanding_balance|float > 0 %}
+            <option value="{{ c.id }}">{{ c.name }} (Due: ₹{{ c.outstanding_balance }})</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount Received (₹) *</label>
+          <input type="number" step="0.01" min="0.01" name="amount" required>
+        </div>
+        <div class="form-group">
+          <label>Method</label>
+          <select name="payment_method">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Card">Card</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" name="payment_date" value="{{ today }}" required>
+        </div>
+      </div>
+      <button type="submit" class="btn">Allocate Payment</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Customer Balances</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th class="num">Total Billed</th>
+          <th class="num">Total Paid</th>
+          <th class="num">Outstanding Due</th>
+          <th>Ledger</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>{{ c.phone }}</td>
+          <td>{{ c.address }} {% if c.pincode %}({{ c.pincode }}){% endif %}</td>
+          <td class="num">₹{{ c.total_billed }}</td>
+          <td class="num">₹{{ c.total_paid }}</td>
+          <td class="num">
+            {% if c.outstanding_balance|float > 0 %}
+              <span class="badge badge-danger">₹{{ c.outstanding_balance }}</span>
+            {% else %}
+              ₹0.00
+            {% endif %}
+          </td>
+          <td><a href="{{ url_for('sales.customer_ledger', customer_id=c.id) }}" class="btn btn-sm btn-secondary">View Ledger</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">No credit customers registered yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

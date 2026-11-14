@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Stock Reconciliation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Physical Stock Check &amp; Movement Log</h1>
+  <a href="{{ url_for('products.index') }}" class="btn btn-secondary">Back to Products</a>
+</div>
+
+<div class="card">
+  <h3>Record Physical Shelf Count</h3>
+  <form method="POST" action="{{ url_for('products.reconcile') }}">
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>Select Product *</label>
+        <select name="product_id" required>
+          <option value="">-- Choose Product --</option>
+          {% for p in products %}
+          <option value="{{ p.id }}">{{ p.product_code }} — {{ p.name }} (System: {{ p.stock_qty }} {{ p.unit }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Physically Counted Qty *</label>
+        <input type="number" step="0.01" min="0" name="counted_qty" required>
+      </div>
+      <div class="form-group" style="flex: 2;">
+        <label>Reason / Note</label>
+        <input type="text" name="note" placeholder="e.g. Monthly shelf audit">
+      </div>
+      <button type="submit" class="btn btn-success">Update &amp; Log Variance</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Recent Stock Movements (Audit Trail)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date &amp; Time</th>
+          <th>Product</th>
+          <th>Type</th>
+          <th class="num">Prev Qty</th>
+          <th class="num">Change</th>
+          <th class="num">New Qty</th>
+          <th>Reference / Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movements %}
+        <tr>
+          <td>{{ m.created_at }}</td>
+          <td>{{ m.product_code }} — {{ m.product_name }}</td>
+          <td><span class="badge badge-info">{{ m.movement_type }}</span></td>
+          <td class="num">{{ m.previous_qty }} {{ m.unit }}</td>
+          <td class="num"><strong>{{ m.quantity_change }}</strong></td>
+          <td class="num">{{ m.new_qty }} {{ m.unit }}</td>
+          <td>{{ m.reference_code }} — {{ m.note }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">No stock movements recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

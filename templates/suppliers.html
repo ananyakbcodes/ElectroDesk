@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Suppliers{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Electrical Suppliers &amp; Distributors</h1>
+  <a href="{{ url_for('purchases.purchases') }}" class="btn btn-success">Record Goods Purchase</a>
+</div>
+
+<div class="card">
+  <h3>Add New Supplier</h3>
+  <form method="POST" action="{{ url_for('purchases.suppliers') }}">
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>Supplier / Agency Name *</label>
+        <input type="text" name="name" placeholder="e.g. Goa Electrical Distributors" required>
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="text" name="phone">
+      </div>
+      <div class="form-group">
+        <label>PIN Code</label>
+        <input type="text" name="pincode" maxlength="6">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label>Address</label>
+        <input type="text" name="address">
+      </div>
+      <div class="form-group" style="flex: 2;">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="e.g. Havells / Finolex dealer">
+      </div>
+      <button type="submit" class="btn btn-success">Save Supplier</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Supplier Directory &amp; Payables</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Supplier Name</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th class="num">Total Purchased</th>
+          <th class="num">Total Paid</th>
+          <th class="num">Balance Payable</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in suppliers %}
+        <tr>
+          <td><strong>{{ s.name }}</strong>{% if s.notes %}<br><small style="color:var(--muted);">{{ s.notes }}</small>{% endif %}</td>
+          <td>{{ s.phone }}</td>
+          <td>{{ s.address }} {% if s.pincode %}({{ s.pincode }}){% endif %}</td>
+          <td class="num">₹{{ s.total_purchased }}</td>
+          <td class="num">₹{{ s.total_paid }}</td>
+          <td class="num">
+            {% if s.outstanding_balance|float > 0 %}
+              <span class="badge badge-danger">₹{{ s.outstanding_balance }}</span>
+            {% else %}
+              ₹0.00
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">No suppliers added yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

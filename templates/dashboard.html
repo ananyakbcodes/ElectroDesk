@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Store Dashboard ({{ summary.today }})</h1>
+  <div>
+    <a href="{{ url_for('sales.new_bill') }}" class="btn btn-success">+ Create New Bill</a>
+    <a href="{{ url_for('products.index') }}" class="btn btn-secondary">Manage Products</a>
+  </div>
+</div>
+
+<div class="grid-4">
+  <div class="stat-card good">
+    <div class="stat-label">Today's Sales ({{ summary.today_bills_count }} bills)</div>
+    <div class="stat-value">₹{{ summary.today_sales_total }}</div>
+  </div>
+  <div class="stat-card {% if summary.low_stock_count > 0 %}bad{% else %}good{% endif %}">
+    <div class="stat-label">Low-Stock Items</div>
+    <div class="stat-value">{{ summary.low_stock_count }}</div>
+  </div>
+  <div class="stat-card warn">
+    <div class="stat-label">Customer Credit Receivable</div>
+    <div class="stat-value">₹{{ summary.customer_receivable }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Supplier Dues Payable</div>
+    <div class="stat-value">₹{{ summary.supplier_payable }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Low-Stock Alerts</h2>
+  {% if low_stock_items %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Product Name</th>
+          <th class="num">Current Stock</th>
+          <th class="num">Min Threshold</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in low_stock_items %}
+        <tr>
+          <td><strong>{{ item.product_code }}</strong></td>
+          <td>{{ item.name }}</td>
+          <td class="num"><span class="badge badge-danger">{{ item.stock_qty }} {{ item.unit }}</span></td>
+          <td class="num">{{ item.min_stock_threshold }} {{ item.unit }}</td>
+          <td><a href="{{ url_for('purchases.purchases') }}" class="btn btn-sm">Restock</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color: var(--success); margin: 0;">All active products are above their minimum stock thresholds.</p>
+  {% endif %}
+</div>
+{% endblock %}
